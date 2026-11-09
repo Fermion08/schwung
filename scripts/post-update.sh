@@ -54,8 +54,7 @@ rm -f /usr/lib/schwung-web-shim.so
 rm -rf "$BASE/modules/store"
 
 # TTS library symlinks
-if [ -d "$BASE/lib" ]; then
-    cd "$BASE/lib"
+if [ -d "$BASE/lib" ] && cd "$BASE/lib"; then
     for lib in *.so.*; do
         [ -e "$lib" ] || continue
         rm -f "/usr/lib/$lib"

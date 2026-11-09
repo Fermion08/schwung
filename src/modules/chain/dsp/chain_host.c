@@ -362,6 +362,10 @@ static void lfo_tick(chain_instance_t *inst, int frames);
 static void v2_set_param_impl(void *instance, const char *key, const char *val) {
     chain_instance_t *inst = (chain_instance_t *)instance;
     if (!inst) return;
+    /* A NULL key is a no-op, never a crash. The dispatch ladder below calls
+     * strcmp(key, ...) on every branch and only the first few guard NULL, so an
+     * unguarded branch would dereference NULL on the SPI audio callback. */
+    if (!key) return;
 
     /*
      * "mod:tick" — advance modulation WITHOUT rendering audio.
@@ -509,7 +513,7 @@ static void v2_set_param_impl(void *instance, const char *key, const char *val) 
     }
 
     if (strcmp(key, "load_patch") == 0 || strcmp(key, "patch") == 0) {
-        int idx = atoi(val);
+        int idx = val ? atoi(val) : -1;
         if (idx < 0) {
             /* Unload patch */
             v2_synth_panic(inst);
@@ -528,13 +532,14 @@ static void v2_set_param_impl(void *instance, const char *key, const char *val) 
         inst->dirty = 0;
     }
     else if (strcmp(key, "delete_patch") == 0) {
-        int index = atoi(val);
-        v2_delete_patch(inst, index);
-        v2_scan_patches(inst);
+        if (val) {
+            v2_delete_patch(inst, atoi(val));
+            v2_scan_patches(inst);
+        }
     }
     else if (strcmp(key, "update_patch") == 0) {
         /* Format: "index:json_data" */
-        const char *colon = strchr(val, ':');
+        const char *colon = val ? strchr(val, ':') : NULL;
         if (colon) {
             int index = atoi(val);
             v2_update_patch(inst, index, colon + 1);
@@ -673,12 +678,11 @@ static void v2_set_param_impl(void *instance, const char *key, const char *val) 
         save_master_preset(val);
     }
     else if (strcmp(key, "delete_master_preset") == 0) {
-        int index = atoi(val);
-        delete_master_preset(index);
+        if (val) delete_master_preset(atoi(val));
     }
     else if (strcmp(key, "update_master_preset") == 0) {
         /* Format: "index:json_data" */
-        const char *colon = strchr(val, ':');
+        const char *colon = val ? strchr(val, ':') : NULL;
         if (colon) {
             int index = atoi(val);
             update_master_preset(index, colon + 1);
@@ -1049,6 +1053,8 @@ static void v2_set_param_impl(void *instance, const char *key, const char *val) 
 static int v2_get_param_impl(void *instance, const char *key, char *buf, int buf_len) {
     chain_instance_t *inst = (chain_instance_t *)instance;
     if (!inst) return -1;
+    if (!key) return -1;   /* same guard as the set_param side: the key-dispatch
+                              ladder below assumes a non-NULL key */
 
     /* "bus<N>:" / "buses:", ahead of everything for the same reason as the
      * set_param side: "bus1:fx2:mix" must not reach the slot's fx2 route. */

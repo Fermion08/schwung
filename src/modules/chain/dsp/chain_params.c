@@ -517,7 +517,10 @@ static int parse_hierarchy_params(const char *json, chain_param_info_t *out_para
                     if (param_start) param_start++;
                 }
 
-                /* Skip comma */
+                /* Skip comma. A malformed string reference above (an unclosed
+                 * quote) leaves param_start NULL; stop rather than feed NULL to
+                 * strchr. */
+                if (!param_start) break;
                 param_start = strchr(param_start, ',');
                 if (!param_start) break;
                 param_start++;

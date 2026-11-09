@@ -541,8 +541,8 @@ int mm_load_module(module_manager_t *mm, int index) {
 
             /* Verify plugin API version */
             if (mm->plugin->api_version != MOVE_PLUGIN_API_VERSION) {
-                printf("mm: plugin reports API v%d, expected v%d\n",
-                       mm->plugin->api_version, MOVE_PLUGIN_API_VERSION);
+                printf("mm: plugin reports API v%u, expected v%d\n",
+                       (unsigned)mm->plugin->api_version, MOVE_PLUGIN_API_VERSION);
                 dlclose(mm->dsp_handle);
                 mm->dsp_handle = NULL;
                 mm->plugin = NULL;

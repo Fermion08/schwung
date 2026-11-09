@@ -172,7 +172,7 @@ static const bs_sysex_t bs_sysex_tests[] = {
 
 /* Copy the probe packets into MIDI_OUT slots verbatim and pump one frame. */
 static void bs_send_sysex(int fd, uint8_t *map, const bs_sysex_t *probe) {
-    for (int i = 0; i < probe->npkts && i < 20; i++)
+    for (int i = 0; i < probe->npkts && i < (int)(sizeof probe->pkts / sizeof probe->pkts[0]); i++)
         memcpy(map + i * 4, probe->pkts[i], 4);
     bs_pump_frame(fd);
     memset(map, 0, 20 * 4);
